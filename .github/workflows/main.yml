@@ -10,12 +10,11 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: python-docker-demo  # Set the folder name as the image name here
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -32,14 +31,19 @@ jobs:
         id: date
         run: echo "CURRENT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
+      - name: Create ECR repository if it does not exist
+        run: |
+          aws ecr describe-repositories --repository-names ${{ env.IMAGE_NAME }} || aws ecr create-repository --repository-name ${{ env.IMAGE_NAME }}
+        env:
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Build, tag, and push image to Amazon ECR
         run: |
-          # Build the Docker image and tag it with the ECR registry, repository name, and current date.
-          docker build -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG python-docker-demo/
+          # Build the Docker image and tag it with the ECR registry, image name, and current date.
+          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG python-docker-demo/
           
           # Push the image to Amazon ECR.
-          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: ${{ github.event.repository.name }}
           IMAGE_TAG: ${{ env.CURRENT_DATE }}
