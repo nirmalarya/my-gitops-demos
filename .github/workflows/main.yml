@@ -1,0 +1,27 @@
+name: Build and Push Python Docker Image
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch as needed
+    paths:
+      - python-demo
+    
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Login to AWS ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        registry: ${{ secrets.AWS_REGISTRY_URL }}
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ secrets.AWS_REGISTRY_URL }}/${{ secrets.REPOSITORY_NAME }}:latest .
+        docker push ${{ secrets.AWS_REGISTRY_URL }}/${{ secrets.REPOSITORY_NAME }}:latest
