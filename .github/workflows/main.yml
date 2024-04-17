@@ -5,7 +5,7 @@ on:
     branches:
       - main  # Adjust the branch as needed
     paths:
-      - python-demo
+      - python-docker-demo/*
     
 
 jobs:
