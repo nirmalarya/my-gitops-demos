@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - python-docker-demo/*
+      - 'python-docker-demo/*'
 
 jobs:
   build-and-push:
@@ -26,12 +26,14 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build, tag, and push image to Amazon ECR
+        run: |
+          # Build the Docker image and tag it with the ECR registry, repository, and image tag.
+          # Note that the build context is set to 'python-docker-demo/' directory.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG python-docker-demo/
+          
+          # Push the image to Amazon ECR.
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: phexhub
           IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG.
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-      # Add any other steps you might need here (e.g., deployment)
