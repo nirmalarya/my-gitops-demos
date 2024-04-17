@@ -20,10 +20,11 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
       with:
         registries: ${{ secrets.AWS_REGISTRY_URL }}
-        region: 'us-east-1'
-        registry-type: 'private'
         mask-password: true
+        registry-type: 'private'
+        region: 'us-east-1'  # Specify the AWS region explicitly
         skip-logout: false
+    
 
     - name: Build and push Docker image
       run: |
