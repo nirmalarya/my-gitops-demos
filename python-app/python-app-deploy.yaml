@@ -13,11 +13,11 @@ spec:
       labels:
         app: app-pythondemo
     spec:
+      restartPolicy: Never  # Set restartPolicy at the Pod level
       serviceAccountName: ecr-service-account  # Add the service account name here
       containers:
         - name: app-pythondemo
           image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-docker-demo:v2.0
           imagePullPolicy: Always
-          restartPolicy: Never
           ports:
             - containerPort: 80
