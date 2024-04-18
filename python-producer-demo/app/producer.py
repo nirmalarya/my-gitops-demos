@@ -4,7 +4,7 @@ import json
 
 app = Flask(__name__)
 
-# Initialize Kafka producer
+# Initialize Kafka producer and test EDH
 producer = KafkaProducer(bootstrap_servers='kfk.awsuse1.tst.edh.int.bayer.com:29300')
 
 # API endpoint to trigger event generation
