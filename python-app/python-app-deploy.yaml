@@ -16,7 +16,7 @@ spec:
       serviceAccountName: ecr-service-account  # Add the service account name here
       containers:
         - name: app-pythondemo
-          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-docker-demo@sha256:413b3936595e4bc3d14bc69ffc8646830c2b060cd7de9361120682d7a20a521a
+          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-docker-demo:v2.0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
