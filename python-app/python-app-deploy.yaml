@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-pythondemo
+  namespace: app-pythondemo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-pythondemo
+  template:
+    metadata:
+      labels:
+        app: app-pythondemo
+    spec:
+      containers:
+        - name: app-pythondemo
+          image: public.ecr.aws/l6m2t8p7/docker-2048:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
