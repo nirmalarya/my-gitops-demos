@@ -13,7 +13,6 @@ spec:
       labels:
         app: app-pythonproducer
     spec:
-      restartPolicy: Never  # Set restartPolicy at the Pod level
       serviceAccountName: ecr-service-account  # Add the service account name here
       containers:
         - name: app-pythonproducer
