@@ -12,7 +12,9 @@ class WebEvent(BaseModel):
     referrer: str
     user_agent: str
 
-# Initialize Kafka producer globally
+print('hello world')
+
+# Initialize Kafka producer globally 
 producer = KafkaProducer(bootstrap_servers='kfk.awsuse1.tst.edh.int.bayer.com:29300')
 
 def test_kafka_connection():
