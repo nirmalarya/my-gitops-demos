@@ -23,7 +23,3 @@ async def trigger_event(web_event: WebEvent):
     producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
 
     return {"message": "Event triggered successfully"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)

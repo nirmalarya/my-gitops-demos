@@ -15,4 +15,4 @@ COPY producer.py .
 # EXPOSE 5000
 
 # Command to run the FastAPI app using the built-in development server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]
+CMD ["uvicorn", "producer:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]
