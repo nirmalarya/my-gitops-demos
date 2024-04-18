@@ -25,16 +25,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Extract tag name
-        id: tag-name
-        run: echo "IMAGE_TAG=v1.0"
-
-
       - name: Create ECR repository if it does not exist
         run: |
           aws ecr describe-repositories --repository-names $IMAGE_NAME || aws ecr create-repository --repository-name $IMAGE_NAME
         env:
-          IMAGE_NAME: ${{ github.event.repository.name }}
+          IMAGE_NAME: "python-docker-demo"
+          IMAGE_TAG: "v1.0"
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Build, tag, and push image to Amazon ECR
