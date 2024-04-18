@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: app-pythondemo
-          image: public.ecr.aws/l6m2t8p7/docker-2048:latest
+          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-docker-demo:v1.0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
