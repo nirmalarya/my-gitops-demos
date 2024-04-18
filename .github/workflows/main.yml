@@ -36,7 +36,7 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         run: |
           # Build the Docker image and tag it with the ECR registry, image name, and current date.
-          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG python-docker-demo/
+          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG python-producer-demo/app/
           
           # Push the image to Amazon ECR.
           docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
