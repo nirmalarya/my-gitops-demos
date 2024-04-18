@@ -27,7 +27,7 @@ jobs:
 
       - name: Extract tag name
         id: tag-name
-        run: echo "IMAGE_TAG=1.0
+        run: echo "IMAGE_TAG=v1.0"
 
 
       - name: Create ECR repository if it does not exist
