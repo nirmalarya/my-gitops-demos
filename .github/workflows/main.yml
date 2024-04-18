@@ -10,6 +10,9 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: python-docker-demo  # Set the folder name as the image name here
+      IMAGE_TAG: v1.0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -24,23 +27,19 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
       - name: Create ECR repository if it does not exist
         run: |
-          aws ecr describe-repositories --repository-names $IMAGE_NAME || aws ecr create-repository --repository-name $IMAGE_NAME
+          aws ecr describe-repositories --repository-names ${{ env.IMAGE_NAME }} || aws ecr create-repository --repository-name ${{ env.IMAGE_NAME }}
         env:
-          IMAGE_NAME: "python-docker-demo"
-          IMAGE_TAG: "v1.0"
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Build, tag, and push image to Amazon ECR
         run: |
-          # Build the Docker image and tag it with the ECR registry, repository name, and current date.
-          docker build -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG python-docker-demo/
+          # Build the Docker image and tag it with the ECR registry, image name, and current date.
+          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG python-docker-demo/
           
           # Push the image to Amazon ECR.
-          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_NAME: ${{ github.event.repository.name }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
