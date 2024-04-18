@@ -1,11 +1,9 @@
-name: Build and Push to ECR Public
+name: Build and Push to ECR
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v1.*.*'  # Trigger the workflow when a new semantic version tag is pushed
     paths:
       - 'python-docker-demo/*'
 
@@ -23,27 +21,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR Public
-        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Extract tag name
         id: tag-name
-        run: echo "IMAGE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: echo "IMAGE_TAG=1.0
 
-      # Uncomment the following step if you are using a private ECR and wish to create the repository if it doesn't exist
-      # - name: Create ECR repository if it does not exist (for private ECR)
-      #   run: |
-      #     aws ecr describe-repositories --repository-names ${{ env.IMAGE_NAME }} || aws ecr create-repository --repository-name ${{ env.IMAGE_NAME }}
-      #   env:
-      #     AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-      #     IMAGE_NAME: python-docker-demo
 
-      - name: Build, tag, and push image to Amazon ECR Public
+      - name: Create ECR repository if it does not exist
         run: |
-          # Build the Docker image and tag it with the public ECR registry and the semantic version tag.
-          docker build -t public.ecr.aws/phexhub-dev/${{ env.IMAGE_NAME }}:v1.0 python-docker-demo/
-          
-          # Push the image to Amazon ECR Public.
-          docker push public.ecr.aws/<your-alias>/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          aws ecr describe-repositories --repository-names $IMAGE_NAME || aws ecr create-repository --repository-name $IMAGE_NAME
         env:
-          IMAGE_NAME: python-docker-demo
+          IMAGE_NAME: ${{ github.event.repository.name }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+      - name: Build, tag, and push image to Amazon ECR
+        run: |
+          # Build the Docker image and tag it with the ECR registry, repository name, and current date.
+          docker build -t $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG python-docker-demo/
+          
+          # Push the image to Amazon ECR.
+          docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_NAME: ${{ github.event.repository.name }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
