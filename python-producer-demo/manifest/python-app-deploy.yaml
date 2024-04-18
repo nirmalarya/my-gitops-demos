@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-pythondemo
+  name: app-pythonproducer
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: app-pythondemo
+      app: app-pythonproducer
   template:
     metadata:
       labels:
-        app: app-pythondemo
+        app: app-pythonproducer
     spec:
       restartPolicy: Never  # Set restartPolicy at the Pod level
       serviceAccountName: ecr-service-account  # Add the service account name here
       containers:
-        - name: app-pythondemo
-          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-docker-demo:v2.0
+        - name: app-pythonproducer
+          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/python-producer-demo:v1.0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
