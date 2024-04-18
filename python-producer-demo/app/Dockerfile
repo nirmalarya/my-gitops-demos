@@ -8,11 +8,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the Flask app files into the container
+# Copy the FastAPI app files into the container
 COPY producer.py .
 
-# Expose the port on which Flask app runs
-EXPOSE 5000
+# Expose the port on which FastAPI runs (optional if not needed)
+# EXPOSE 5000
 
-# Command to run the Flask app
-CMD ["python", "producer.py"]
+# Command to run the FastAPI app using the built-in development server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]

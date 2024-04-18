@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-pythonproducer
+  namespace: default
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"  
+    nginx.ingress.kubernetes.io/ssl-certificate: "default/app-python-producer-tls"
+    external-dns.alpha.kubernetes.io/hostname: event.891377135844.cloud.bayer.com
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: event.891377135844.cloud.bayer.com
+    http:
+      paths:
+      - path: /app-pythonproducer-demo
+        pathType: Prefix
+        backend:
+          service:
+            name: app-pythonproducer
+            port:
+              number: 5000
+  tls:
+    - hosts:
+      - event.891377135844.cloud.bayer.com
+      secretName: app-python-producer-tls
