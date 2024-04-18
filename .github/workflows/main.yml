@@ -41,7 +41,7 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR Public
         run: |
           # Build the Docker image and tag it with the public ECR registry and the semantic version tag.
-          docker build -t public.ecr.aws/<your-alias>/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} python-docker-demo/
+          docker build -t public.ecr.aws/phexhub-dev/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} python-docker-demo/
           
           # Push the image to Amazon ECR Public.
           docker push public.ecr.aws/<your-alias>/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
