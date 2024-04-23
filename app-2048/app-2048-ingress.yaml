@@ -6,13 +6,13 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: nlb
     nginx.ingress.kubernetes.io/ssl-redirect: "true"  
-    nginx.ingress.kubernetes.io/ssl-certificate: "app-2048/app-2048-tls"
-    external-dns.alpha.kubernetes.io/hostname: app-2048.891377135844.cloud.bayer.com
+    nginx.ingress.kubernetes.io/ssl-certificate: "app-2048/app-2048-prod-tls"
+    external-dns.alpha.kubernetes.io/hostname: app-2048.phexhub.int.bayer.com
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   ingressClassName: nginx
   rules:
-  - host: app-2048.891377135844.cloud.bayer.com
+  - host: app-2048.phexhub.int.bayer.com
     http:
       paths:
       - path: /
@@ -24,5 +24,5 @@ spec:
               number: 80
   tls:
     - hosts:
-      - app-2048.891377135844.cloud.bayer.com
-      secretName: app-2048-tls
+      - app-2048.phexhub.int.bayer.com
+      secretName: app-2048-prod-tls

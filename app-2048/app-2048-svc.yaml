@@ -4,7 +4,7 @@ metadata:
   name: app-2048
   namespace: app-2048
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: app-2048.891377135844.cloud.bayer.com
+    external-dns.alpha.kubernetes.io/hostname: app-2048.phexhub.int.bayer.com
     cert-manager.io/cluster-issuer: letsencrypt-production  # cluster issuer for certificate generation
 spec:
   selector:
