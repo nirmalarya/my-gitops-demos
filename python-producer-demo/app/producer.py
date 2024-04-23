@@ -12,10 +12,22 @@ class WebEvent(BaseModel):
     referrer: str
     user_agent: str
 
-print('hello Nik and Sam')
+# Define Kafka broker and SSL configuration directly in code
+kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
+ssl_cafile = '/path/to/ca.crt'
+ssl_certfile = '/path/to/client.crt'
+ssl_keyfile = '/path/to/client.key'
+ssl_password = 'your_ssl_password'
 
-# Initialize Kafka producer globally 
-producer = KafkaProducer(bootstrap_servers='kfk.awsuse1.tst.edh.int.bayer.com:29300')
+# Initialize Kafka producer with SSL configuration
+producer = KafkaProducer(
+    bootstrap_servers=kafka_host,
+    security_protocol='SSL',
+    ssl_cafile=ssl_cafile,
+    ssl_certfile=ssl_certfile,
+    ssl_keyfile=ssl_keyfile,
+    ssl_password=ssl_password
+)
 
 def test_kafka_connection():
     try:
