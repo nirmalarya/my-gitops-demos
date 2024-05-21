@@ -1,3 +1,4 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-kafka-python==2.0.2
+fastapi
+uvicorn[standard]
+kafka-python
+hvac

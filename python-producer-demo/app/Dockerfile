@@ -9,10 +9,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI app files into the container
-COPY producer.py .
+COPY main.py .
 
 # Expose the port on which FastAPI runs (optional if not needed)
 # EXPOSE 5000
 
 # Command to run the FastAPI app using the built-in development server
-CMD ["uvicorn", "producer:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--reload"]
