@@ -77,6 +77,9 @@ def get_vault_secrets(client, vault_mount_point, vault_secret_path):
 # Get the Vault secrets
 secrets = get_vault_secrets(vault_client, vault_mount_point, vault_secret_path)
 
+# print secrets for debugging
+print(secrets)
+
 # Create temporary files for SSL certificates
 temp_cafile = tempfile.NamedTemporaryFile(delete=False)
 temp_certfile = tempfile.NamedTemporaryFile(delete=False)
