@@ -27,25 +27,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set Vault environment variables
-        run: |
-          echo "export VAULT_ROLE_ID=${VAULT_ROLE_ID}" >> $GITHUB_ENV
-          echo "export VAULT_SECRET_ID=${VAULT_SECRET_ID}" >> $GITHUB_ENV
-          echo "export VAULT_ADDR=${VAULT_ADDR}" >> $GITHUB_ENV
-
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registries: ${{ secrets.AWS_REGISTRY_URL }}
-          registry-type: "private"
-          mask-password: true
-          skip-logout: false
+
       - name: Create ECR repository if it does not exist
         run: |
           aws ecr describe-repositories --repository-names ${{ env.IMAGE_NAME }} || aws ecr create-repository --repository-name ${{ env.IMAGE_NAME }}
         env:
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+
+      - name: Set Vault environment variables
+        run: |
+          echo "VAULT_ROLE_ID=${VAULT_ROLE_ID}" >> $GITHUB_ENV
+          echo "VAULT_SECRET_ID=${VAULT_SECRET_ID}" >> $GITHUB_ENV
+          echo "VAULT_ADDR=${VAULT_ADDR}" >> $GITHUB_ENV
 
       - name: Build and tag Docker image
         run: |
@@ -54,13 +50,15 @@ jobs:
           echo "GitHub Tag Name: $IMAGE_TAG"
 
           # Build the Docker image and tag it dynamically with the GitHub tag name
-          docker build -t ${{ secrets.AWS_REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG --build-arg VAULT_ROLE_ID=${VAULT_ROLE_ID} --build-arg VAULT_SECRET_ID=${VAULT_SECRET_ID} --build-arg VAULT_ADDR=${VAULT_ADDR} web-ingestion/app/
+          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG --build-arg VAULT_ROLE_ID=${VAULT_ROLE_ID} --build-arg VAULT_SECRET_ID=${VAULT_SECRET_ID} --build-arg VAULT_ADDR=${VAULT_ADDR} ${{ env.IMAGE_NAME }}/app/
 
           # Tag the image with ECR repository URI and GitHub tag name
-          docker tag ${{ secrets.AWS_REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG ${{ secrets.AWS_REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
 
       - name: Push Docker image to Amazon ECR
-        run: docker push ${{ secrets.AWS_REGISTRY_URL }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
-
+        run: docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
