@@ -49,16 +49,14 @@ jobs:
           IMAGE_TAG=$(echo "${GITHUB_REF#refs/tags/}")
           echo "GitHub Tag Name: $IMAGE_TAG"
 
+          # Define the full image name
+          FULL_IMAGE_NAME=${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          echo "Full Image Name: $FULL_IMAGE_NAME"
+
           # Build the Docker image and tag it dynamically with the GitHub tag name
-          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG --build-arg VAULT_ROLE_ID=${VAULT_ROLE_ID} --build-arg VAULT_SECRET_ID=${VAULT_SECRET_ID} --build-arg VAULT_ADDR=${VAULT_ADDR} ${{ env.IMAGE_NAME }}/app/
-
-          # Tag the image with ECR repository URI and GitHub tag name
-          docker tag $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
-
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          docker build -t $FULL_IMAGE_NAME --build-arg VAULT_ROLE_ID=${VAULT_ROLE_ID} --build-arg VAULT_SECRET_ID=${VAULT_SECRET_ID} --build-arg VAULT_ADDR=${VAULT_ADDR} ${{ env.IMAGE_NAME }}/app/
 
       - name: Push Docker image to Amazon ECR
-        run: docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+        run: docker push $FULL_IMAGE_NAME
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          FULL_IMAGE_NAME: ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}
