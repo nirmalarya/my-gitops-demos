@@ -4,7 +4,7 @@ metadata:
   name: app-pythonproducer
   namespace: default
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: event.891377135844.cloud.bayer.com
+    external-dns.alpha.kubernetes.io/hostname: webevent.phexhub-np.int.bayer.com
     cert-manager.io/cluster-issuer: letsencrypt-production  # cluster issuer for certificate generation
 spec:
   selector:

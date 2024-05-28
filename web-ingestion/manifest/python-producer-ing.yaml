@@ -6,13 +6,13 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: nlb
     nginx.ingress.kubernetes.io/ssl-redirect: "true"  
-    nginx.ingress.kubernetes.io/ssl-certificate: "default/app-python-producer-tls"
-    external-dns.alpha.kubernetes.io/hostname: event.891377135844.cloud.bayer.com
+    nginx.ingress.kubernetes.io/ssl-certificate: "default/web-ingestion-tls"
+    external-dns.alpha.kubernetes.io/hostname: webevent.phexhub-np.int.bayer.com
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   ingressClassName: nginx
   rules:
-  - host: event.891377135844.cloud.bayer.com
+  - host: webevent.phexhub-np.int.bayer.com
     http:
       paths:
       - path: /app-pythonproducer-demo
@@ -24,5 +24,5 @@ spec:
               number: 5000
   tls:
     - hosts:
-      - event.891377135844.cloud.bayer.com
-      secretName: app-python-producer-tls
+      - webevent.phexhub-np.int.bayer.com
+      secretName: web-ingestion-tls
