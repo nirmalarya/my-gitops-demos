@@ -83,10 +83,14 @@ temp_certfile = tempfile.NamedTemporaryFile(delete=False)
 temp_keyfile = tempfile.NamedTemporaryFile(delete=False)
 
 try:
-    with open(temp_cafile.name, 'w') as cafile, open(temp_certfile.name, 'w') as certfile, open(temp_keyfile.name, 'w') as keyfile:
-        cafile.write(secrets['ssl_ca'])
-        certfile.write(secrets['ssl_cert'])
-        keyfile.write(secrets['ssl_key'])
+    # Write the certificates to the temporary files
+    temp_cafile.write(secrets['ssl_ca'].encode('utf-8'))
+    temp_certfile.write(secrets['ssl_cert'].encode('utf-8'))
+    temp_keyfile.write(secrets['ssl_key'].encode('utf-8'))
+    
+    temp_cafile.close()
+    temp_certfile.close()
+    temp_keyfile.close()
 
     # Define the Kafka broker and SSL configuration
     kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
