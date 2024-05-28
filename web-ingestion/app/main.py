@@ -7,6 +7,7 @@ import os
 import json
 import threading
 import time
+import tempfile
 
 app = FastAPI()
 
@@ -40,7 +41,7 @@ def authenticate_with_approle(vault_addr, role_id, secret_id):
     return auth_response['auth']['client_token']
 
 # Function to renew the Vault token periodically
-def renew_token_periodically(client, interval= 7 * 3600):
+def renew_token_periodically(client, interval=7 * 3600):
     while True:
         time.sleep(interval)
         try:
@@ -76,47 +77,59 @@ def get_vault_secrets(client, vault_mount_point, vault_secret_path):
 # Get the Vault secrets
 secrets = get_vault_secrets(vault_client, vault_mount_point, vault_secret_path)
 
-# Define the Kafka broker and SSL configuration
-kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
+# Create temporary files for SSL certificates
+temp_cafile = tempfile.NamedTemporaryFile(delete=False)
+temp_certfile = tempfile.NamedTemporaryFile(delete=False)
+temp_keyfile = tempfile.NamedTemporaryFile(delete=False)
 
-ssl_cafile = secrets['ssl_ca']
-ssl_certfile = secrets['ssl_cert']
-ssl_keyfile = secrets['ssl_key']
-ssl_password = secrets['ssl_key_pass']
+try:
+    with open(temp_cafile.name, 'w') as cafile, open(temp_certfile.name, 'w') as certfile, open(temp_keyfile.name, 'w') as keyfile:
+        cafile.write(secrets['ssl_ca'])
+        certfile.write(secrets['ssl_cert'])
+        keyfile.write(secrets['ssl_key'])
 
-# Initialize Kafka producer with SSL configuration
-producer = KafkaProducer(
-    bootstrap_servers=kafka_host,
-    security_protocol='SSL',
-    ssl_cafile=ssl_cafile,
-    ssl_certfile=ssl_certfile,
-    ssl_keyfile=ssl_keyfile,
-    ssl_password=ssl_password
-)
+    # Define the Kafka broker and SSL configuration
+    kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
 
-def test_kafka_connection():
-    try:
-        # Send a test message to the Kafka topic
-        test_event = WebEvent(
-            user_id='test_user',
-            event_type='test_event',
-            page_id='test_page',
-            referrer='test_referrer',
-            user_agent='test_user_agent'
-        )
-        event_data = test_event.dict()
+    # Initialize Kafka producer with SSL configuration
+    producer = KafkaProducer(
+        bootstrap_servers=kafka_host,
+        security_protocol='SSL',
+        ssl_cafile=temp_cafile.name,
+        ssl_certfile=temp_certfile.name,
+        ssl_keyfile=temp_keyfile.name,
+        ssl_password=secrets['ssl_key_pass']
+    )
+
+    def test_kafka_connection():
+        try:
+            # Send a test message to the Kafka topic
+            test_event = WebEvent(
+                user_id='test_user',
+                event_type='test_event',
+                page_id='test_page',
+                referrer='test_referrer',
+                user_agent='test_user_agent'
+            )
+            event_data = test_event.dict()
+            producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
+            return {"message": "Test message sent successfully to Kafka"}
+        except Exception as e:
+            return {"error": f"Error sending test message to Kafka: {e}"}
+
+    @app.post("/app-pythonproducer-demo/")
+    async def trigger_event(web_event: WebEvent):
+        event_data = web_event.dict()
+        # Send event to Kafka topic
         producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
-        return {"message": "Test message sent successfully to Kafka"}
-    except Exception as e:
-        return {"error": f"Error sending test message to Kafka: {e}"}
+        return {"message": "Event triggered successfully"}
 
-@app.post("/app-pythonproducer-demo/")
-async def trigger_event(web_event: WebEvent):
-    event_data = web_event.dict()
-    # Send event to Kafka topic
-    producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
-    return {"message": "Event triggered successfully"}
+    @app.post("/app-pythonproducer-demo/test")
+    async def test_kafka_endpoint():
+        return test_kafka_connection()
 
-@app.post("/app-pythonproducer-demo/test")
-async def test_kafka_endpoint():
-    return test_kafka_connection()
+finally:
+    # Clean up temporary files
+    os.unlink(temp_cafile.name)
+    os.unlink(temp_certfile.name)
+    os.unlink(temp_keyfile.name)
