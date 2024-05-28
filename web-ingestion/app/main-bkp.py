@@ -1,7 +1,7 @@
-# Description: Python FastAPI application to send events to Kafka topic
 from fastapi import FastAPI, HTTPException 
 from pydantic import BaseModel
 from kafka import KafkaProducer
+from dotenv import load_dotenv
 import hvac
 import os
 import json
@@ -15,36 +15,56 @@ class WebEvent(BaseModel):
     referrer: str
     user_agent: str
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Define HashiCorp Vault address and KV path
 vault_addr = 'https://vault.agro.services'
-vault_kv_path = 'kv/ph-commercial-architecture/non-prod/edh/'
-vault_token = ''
+vault_mount_point = 'kv'
+vault_secret_path = 'ph-commercial-architecture/non-prod/edh'
 
-# # Get the Vault token from environment variable
-# vault_token = os.getenv('VAULT_TOKEN')
-# if not vault_token:
-#     raise ValueError("VAULT_TOKEN environment variable is not set")
+# Get the Vault token from environment variable
+vault_token = os.getenv('VAULT_TOKEN')
+if not vault_token:    
+    raise ValueError("VAULT_TOKEN environment variable is not set")
 
 # Function to get HashiCorp Vault secrets
-def get_vault_secrets(vault_addr, vault_token, vault_kv_path):
+def get_vault_secrets(vault_addr, vault_token, vault_mount_point, vault_secret_path):
     try:
         # Initialize the Vault client
         client = hvac.Client(url=vault_addr, token=vault_token)
+        
+        # Debugging: Verify if the client is authenticated
+        if not client.is_authenticated():
+            raise HTTPException(status_code=401, detail="Vault client authentication failed")
+
+        # Debugging: Print the URL being accessed
+        secret_url = f"{vault_addr}/v1/{vault_mount_point}/data/{vault_secret_path}"
+        print(f"Accessing Vault URL: {secret_url}")
 
         # Read the secrets from the Vault KV path
         secrets = client.secrets.kv.v2.read_secret_version(
-            path=vault_kv_path
+            path=vault_secret_path,
+            mount_point=vault_mount_point
         )
 
         return secrets['data']['data']  # Return the secrets data
+    except hvac.exceptions.Forbidden as e:
+        raise HTTPException(status_code=403, detail=f"Permission denied: {e}")
+    except hvac.exceptions.InvalidPath as e:
+        raise HTTPException(status_code=404, detail=f"Invalid path: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving secrets from Vault: {e}")
 
 # Get the Vault secrets
-secrets = get_vault_secrets(vault_addr, vault_token, vault_kv_path)
+secrets = get_vault_secrets(vault_addr, vault_token, vault_mount_point, vault_secret_path)
+
+# Debugging: Print the secrets (ensure this is safe to do in your environment)
+print(f"Secrets: {secrets}")
 
 # Define the Kafka broker and SSL configuration
 kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
+
 ssl_cafile = secrets['ssl_ca']
 ssl_certfile = secrets['ssl_cert']
 ssl_keyfile = secrets['ssl_key']

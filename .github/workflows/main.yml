@@ -1,28 +1,37 @@
-name: Build and Push to ECR
+name: Build and Push to ECR on Tag
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*" # Match tags starting with 'v'
     paths:
-      - 'python-producer-demo/app/*'
+      - "web-ingestion/app/*"
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: python-producer-demo  # Set the folder name as the image name here
-      IMAGE_TAG: v2.4
+      IMAGE_NAME: web-ingestion
+      AWS_REGION: us-east-1 # Update with your AWS region
+      VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
+      VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+      VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set Vault environment variables
+        run: |
+          echo "export VAULT_ROLE_ID=${VAULT_ROLE_ID}" >> $GITHUB_ENV
+          echo "export VAULT_SECRET_ID=${VAULT_SECRET_ID}" >> $GITHUB_ENV
+          echo "export VAULT_ADDR=${VAULT_ADDR}" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -35,11 +44,10 @@ jobs:
 
       - name: Build, tag, and push image to Amazon ECR
         run: |
-          # Build the Docker image and tag it with the ECR registry, image name, and current date.
-          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG python-producer-demo/app/
-          
+          # Build the Docker image and tag it with the desired image tag
+          docker build -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:${{ github.event.ref }} --build-arg VAULT_ROLE_ID=${VAULT_ROLE_ID} --build-arg VAULT_SECRET_ID=${VAULT_SECRET_ID} --build-arg VAULT_ADDR=${VAULT_ADDR} web-ingestion/app/
+
           # Push the image to Amazon ECR.
-          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }}:${{ github.event.ref }}
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
