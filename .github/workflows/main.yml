@@ -59,4 +59,4 @@ jobs:
       - name: Push Docker image to Amazon ECR
         run: docker push $FULL_IMAGE_NAME
         env:
-          FULL_IMAGE_NAME: ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:${GITHUB_REF#refs/tags/}
+          FULL_IMAGE_NAME: ${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
