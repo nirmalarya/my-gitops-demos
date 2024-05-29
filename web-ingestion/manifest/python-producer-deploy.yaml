@@ -16,7 +16,7 @@ spec:
       serviceAccountName: ecr-service-account  # Add the service account name here
       containers:
         - name: app-pythonproducer
-          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/web-ingestion:v1.6
+          image: 891377135844.dkr.ecr.us-east-1.amazonaws.com/web-ingestion:v1.7
           imagePullPolicy: Always
           ports:
             - containerPort: 80
