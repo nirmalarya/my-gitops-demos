@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI app files into the container
 COPY main.py .
+COPY ssl_utils.py .
 
 # Define build arguments
 ARG VAULT_ROLE_ID
