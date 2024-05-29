@@ -8,6 +8,7 @@ import json
 import threading
 import time
 import ssl
+import tempfile
 
 app = FastAPI()
 
@@ -77,10 +78,24 @@ def get_vault_secrets(client, vault_mount_point, vault_secret_path):
 # Get the Vault secrets
 secrets = get_vault_secrets(vault_client, vault_mount_point, vault_secret_path)
 
-# Create an SSL context
-ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-ssl_context.load_verify_locations(cadata=secrets['ssl_ca'])
-ssl_context.load_cert_chain(certfile=secrets['ssl_cert'], keyfile=secrets['ssl_key'], password=secrets['ssl_key_pass'])
+# Create temporary files for SSL certificates
+with tempfile.NamedTemporaryFile(delete=False) as temp_cafile, \
+     tempfile.NamedTemporaryFile(delete=False) as temp_certfile, \
+     tempfile.NamedTemporaryFile(delete=False) as temp_keyfile:
+
+    # Write the certificates to the temporary files
+    temp_cafile.write(secrets['ssl_ca'].encode('utf-8'))
+    temp_certfile.write(secrets['ssl_cert'].encode('utf-8'))
+    temp_keyfile.write(secrets['ssl_key'].encode('utf-8'))
+
+    temp_cafile.flush()
+    temp_certfile.flush()
+    temp_keyfile.flush()
+
+    # Create an SSL context
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.load_verify_locations(cafile=temp_cafile.name)
+    ssl_context.load_cert_chain(certfile=temp_certfile.name, keyfile=temp_keyfile.name, password=secrets['ssl_key_pass'])
 
 # Define the Kafka broker
 kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
@@ -118,3 +133,12 @@ async def trigger_event(web_event: WebEvent):
 @app.post("/app-pythonproducer-demo/test")
 async def test_kafka_endpoint():
     return test_kafka_connection()
+
+# Ensure temporary files are deleted after the program finishes
+try:
+    while True:
+        time.sleep(1)
+finally:
+    os.unlink(temp_cafile.name)
+    os.unlink(temp_certfile.name)
+    os.unlink(temp_keyfile.name)
