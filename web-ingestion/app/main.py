@@ -131,7 +131,7 @@ def test_kafka_connection():
     except Exception as e:
         return {"error": f"Error sending test message to Kafka: {e}"}
 
-@app.post("/web-ingestion/")
+@app.post("/web-ingestion")
 async def trigger_event(web_event: WebEvent):
     event_data = web_event.dict()
     try:
