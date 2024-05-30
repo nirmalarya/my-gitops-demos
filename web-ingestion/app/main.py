@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+#
+# FastAPI Kafka Producer.
+# Connects to local and non-prod Kafka brokers and provides endpoints to send events.
+#
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 from dotenv import load_dotenv
 import hvac
 import os
@@ -8,6 +14,7 @@ import json
 import threading
 import time
 import tempfile
+import logging
 
 app = FastAPI()
 
@@ -20,6 +27,9 @@ class WebEvent(BaseModel):
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Set up logging for Kafka client
+logging.basicConfig(level=logging.DEBUG)
 
 # Define HashiCorp Vault address and AppRole details
 vault_addr = os.getenv('VAULT_ADDR')
@@ -61,12 +71,11 @@ renew_thread.start()
 # Function to get HashiCorp Vault secrets
 def get_vault_secrets(client, vault_mount_point, vault_secret_path):
     try:
-        # Read the secrets from the Vault KV path
         secrets = client.secrets.kv.v2.read_secret_version(
             path=vault_secret_path,
             mount_point=vault_mount_point
         )
-        return secrets['data']['data']  # Return the secrets data
+        return secrets['data']['data']
     except hvac.exceptions.Forbidden as e:
         raise HTTPException(status_code=403, detail=f"Permission denied: {e}")
     except hvac.exceptions.InvalidPath as e:
@@ -77,68 +86,71 @@ def get_vault_secrets(client, vault_mount_point, vault_secret_path):
 # Get the Vault secrets
 secrets = get_vault_secrets(vault_client, vault_mount_point, vault_secret_path)
 
-# Create temporary files for SSL certificates
-temp_cafile = tempfile.NamedTemporaryFile(delete=False)
-temp_certfile = tempfile.NamedTemporaryFile(delete=False)
-temp_keyfile = tempfile.NamedTemporaryFile(delete=False)
+# Define Kafka broker host and port
+kafka_broker = secrets['kafka_broker_us'] 
 
-try:
-    # Write the certificates to the temporary files
+# Create temporary files for SSL certificates
+with tempfile.NamedTemporaryFile(delete=False) as temp_cafile, \
+     tempfile.NamedTemporaryFile(delete=False) as temp_certfile, \
+     tempfile.NamedTemporaryFile(delete=False) as temp_keyfile:
+
     temp_cafile.write(secrets['ssl_ca'].encode('utf-8'))
     temp_certfile.write(secrets['ssl_cert'].encode('utf-8'))
     temp_keyfile.write(secrets['ssl_key'].encode('utf-8'))
-    
-    temp_cafile.close()
-    temp_certfile.close()
-    temp_keyfile.close()
 
-    # Define the Kafka broker and SSL configuration
-    kafka_host = 'kfk.awsuse1.tst.edh.int.bayer.com:29300'
+    temp_cafile.flush()
+    temp_certfile.flush()
+    temp_keyfile.flush()
 
-    # Initialize Kafka producer with SSL configuration
-    producer = KafkaProducer(
-        bootstrap_servers=kafka_host,
-        security_protocol='SSL',
-        ssl_cafile=temp_cafile.name,
-        ssl_certfile=temp_certfile.name,
-        ssl_keyfile=temp_keyfile.name,
-        ssl_password=secrets['ssl_key_pass']
-    )
-#debug by printing ssl_cafile, ssl_certfile, ssl_keyfile
-    print(f"SSL CA file: {temp_cafile.name}")
-    print(f"SSL Cert file: {temp_certfile.name}")
-    print(f"SSL Key file: {temp_keyfile.name}")
+    # Kafka producer configuration
+    conf = {
+        'bootstrap.servers': kafka_broker,
+        'security.protocol': 'SSL',
+        'ssl.ca.location': temp_cafile.name,
+        'ssl.certificate.location': temp_certfile.name,
+        'ssl.key.location': temp_keyfile.name,
+        'ssl.key.password': secrets['ssl_key_pass']
+    }
 
+    # Initialize Kafka producer
+    producer = Producer(conf)
 
-    def test_kafka_connection():
-        try:
-            # Send a test message to the Kafka topic
-            test_event = WebEvent(
-                user_id='test_user',
-                event_type='test_event',
-                page_id='test_page',
-                referrer='test_referrer',
-                user_agent='test_user_agent'
-            )
-            event_data = test_event.dict()
-            producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
-            return {"message": "Test message sent successfully to Kafka"}
-        except Exception as e:
-            return {"error": f"Error sending test message to Kafka: {e}"}
+def test_kafka_connection():
+    try:
+        test_event = WebEvent(
+            user_id='test_user',
+            event_type='test_event',
+            page_id='test_page',
+            referrer='test_referrer',
+            user_agent='test_user_agent'
+        )
+        event_data = test_event.dict()
+        producer.produce('app.ph-commercial.website.click.events.avro', key='test', value=json.dumps(event_data))
+        producer.flush()
+        return {"message": "Test message sent successfully to Kafka"}
+    except Exception as e:
+        return {"error": f"Error sending test message to Kafka: {e}"}
 
-    @app.post("/app-pythonproducer-demo/")
-    async def trigger_event(web_event: WebEvent):
-        event_data = web_event.dict()
-        # Send event to Kafka topic
-        producer.send('app.ph-commercial.website.click.events.avro', json.dumps(event_data).encode('utf-8'))
+@app.post("/web-ingestion/")
+async def trigger_event(web_event: WebEvent):
+    event_data = web_event.dict()
+    try:
+        producer.produce('app.ph-commercial.website.click.events.avro', key='event', value=json.dumps(event_data))
+        producer.flush()
         return {"message": "Event triggered successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending event to Kafka: {e}")
 
-    @app.post("/app-pythonproducer-demo/test")
-    async def test_kafka_endpoint():
-        return test_kafka_connection()
+@app.post("/web-ingestion/test")
+async def test_kafka_endpoint():
+    return test_kafka_connection()
 
-finally:
-    # Clean up temporary files
-    os.unlink(temp_cafile.name)
-    os.unlink(temp_certfile.name)
-    os.unlink(temp_keyfile.name)
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "UP"}
+
+# clean up the temporary files
+os.unlink(temp_cafile.name)
+os.unlink(temp_certfile.name)
+os.unlink(temp_keyfile.name)
