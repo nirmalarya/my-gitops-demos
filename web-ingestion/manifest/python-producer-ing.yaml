@@ -15,7 +15,7 @@ spec:
   - host: webevent.phexhub-np.int.bayer.com
     http:
       paths:
-      - path: /app-pythonproducer-demo
+      - path: /
         pathType: Prefix
         backend:
           service:
