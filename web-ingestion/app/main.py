@@ -29,8 +29,8 @@ class WebEvent(BaseModel):
     City: str
     Country: str
     Language: str
-    HcpId: str
-    ConsentSubmitted: int
+    HcpID: str
+    ConsentSubmitted: str
 
 # Load environment variables from .env file
 load_dotenv()
@@ -136,7 +136,7 @@ def test_kafka_connection():
             Country='Test Country',
             Language='en',
             HcpID='test_hcpid',
-            ConsentSubmitted=1
+            ConsentSubmitted='true'
         )
         event_data = test_event.dict()
         producer.produce('app.ph-commercial.website.click.events.avro', key='test', value=json.dumps(event_data))
