@@ -19,11 +19,18 @@ import logging
 app = FastAPI()
 
 class WebEvent(BaseModel):
-    user_id: str
-    event_type: str
-    page_id: str
-    referrer: str
-    user_agent: str
+    FormID: str
+    EmailAddress: str
+    FirstName: str
+    LastName: str
+    AddressLine1: str
+    AddressLine2: str
+    Zip: str
+    City: str
+    Country: str
+    Language: str
+    HcpId: str
+    ConsentSubmitted: int
 
 # Load environment variables from .env file
 load_dotenv()
@@ -118,11 +125,18 @@ with tempfile.NamedTemporaryFile(delete=False) as temp_cafile, \
 def test_kafka_connection():
     try:
         test_event = WebEvent(
-            user_id='test_user',
-            event_type='test_event',
-            page_id='test_page',
-            referrer='test_referrer',
-            user_agent='test_user_agent'
+            FormID='test_form',
+            EmailAddress='test_email@example.com',
+            FirstName='Test',
+            LastName='User',
+            AddressLine1='123 Test St',
+            AddressLine2='Apt 4',
+            Zip='12345',
+            City='Test City',
+            Country='Test Country',
+            Language='en',
+            HcpID='test_hcpid',
+            ConsentSubmitted=1
         )
         event_data = test_event.dict()
         producer.produce('app.ph-commercial.website.click.events.avro', key='test', value=json.dumps(event_data))
