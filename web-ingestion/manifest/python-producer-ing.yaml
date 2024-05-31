@@ -6,16 +6,16 @@ metadata:
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: nlb
     nginx.ingress.kubernetes.io/ssl-redirect: "true"  
-    nginx.ingress.kubernetes.io/ssl-certificate: "default/web-ingestion-tls"
-    external-dns.alpha.kubernetes.io/hostname: webevent.phexhub-np.int.bayer.com
+    nginx.ingress.kubernetes.io/ssl-certificate: "default/event-tls"
+    external-dns.alpha.kubernetes.io/hostname: event.phexhub-np.int.bayer.com
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   ingressClassName: nginx
   rules:
-  - host: webevent.phexhub-np.int.bayer.com
+  - host: event.phexhub-np.int.bayer.com
     http:
       paths:
-      - path: /
+      - path: /web-ingestion
         pathType: Prefix
         backend:
           service:
@@ -24,5 +24,5 @@ spec:
               number: 5000
   tls:
     - hosts:
-      - webevent.phexhub-np.int.bayer.com
-      secretName: web-ingestion-tls
+      - event.phexhub-np.int.bayer.com
+      secretName: event-tls
