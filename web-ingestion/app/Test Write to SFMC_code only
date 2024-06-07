@@ -1,0 +1,59 @@
+# Function to send data to Salesforce Marketing Cloud DE
+def send_to_sfmc_de(data, de_external_key_field, de_external_key):
+  """
+  Sends data to a Salesforce Marketing Cloud Data Extension.
+
+  Args:
+      data: The data to be sent, as a JSON object.
+      de_external_key_field: The name of the external key field in the DE.
+      de_external_key: The value of the external key for this data.
+
+  Returns:
+      None
+  """
+  headers = {
+      'Authorization': f'Bearer {sfmc_access_token}',
+      'Content-Type': 'application/json'
+  }
+  url = f"{sfmc_api_endpoint}/{de_external_key_field}/{de_external_key}"
+  response = requests.post(url, headers=headers, json=data)
+  if response.status_code == 200:
+      logging.info("Event sent to SFMC DE successfully")
+  else:
+      logging.error(f"Error sending event to SFMC DE: {response.status_code} {response.text}")
+
+def handle_event(event_data):
+  event_type = event_data.get('type')
+  journey_id = event_data.get('JourneyID')
+  
+
+  if event_type == 'bulk':
+      # Get SFMC DE details from Vault
+      de_name = secrets_sfmc.get('sfmc_de_name')
+      de_external_key_field = secrets_sfmc.get('sfmc_de_external_key_field')
+      if not de_name or not de_external_key_field:
+          raise ValueError("Missing SFMC DE details in Vault")
+      add_bulk_event(journey_id, event_data)
+
+
+def add_bulk_event(journey_id, event_data):
+  
+
+  def export_bulk_events(journey_id):
+
+      events = bulk_events.pop(journey_id, [])
+      if events:
+          # Get SFMC DE details from Vault or potential hard code for now
+          de_name = secrets_sfmc.get('sfmc_de_name')
+          de_external_key_field = secrets_sfmc.get('sfmc_de_external_key_field')
+          if not de_name or not de_external_key_field:
+              raise ValueError("Missing SFMC DE details in Vault")
+          
+          # Prepare data for DE
+          de_data = []
+          for event in events:
+              # Modify event data for DE schema (if needed)
+              de_data.append(event)  
+          
+          # Send data to SFMC DE
+          send_to_sfmc_de(de_data, de_external_key_field, journey_id)
