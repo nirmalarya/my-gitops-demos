@@ -118,18 +118,18 @@ sfmc_client_secret = secrets_sfmc['sfmc_client_secret']
 sfmc_account_id = secrets_sfmc['sfmc_account_id']
 
 # AWS S3 details
-s3_bucket_name = secrets['s3_bucket_name']
-aws_access_key_id = secrets['aws_access_key_id']
-aws_secret_access_key = secrets['aws_secret_access_key']
-aws_region = secrets['aws_region']
+##s3_bucket_name = secrets['s3_bucket_name']
+##aws_access_key_id = secrets['aws_access_key_id']
+##aws_secret_access_key = secrets['aws_secret_access_key']
+##aws_region = secrets['aws_region']
 
 # Initialize S3 client
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    region_name=aws_region
-)
+##s3_client = boto3.client(
+##    's3',
+##    aws_access_key_id=aws_access_key_id,
+##    aws_secret_access_key=aws_secret_access_key,
+##    region_name=aws_region
+##)
 
 # Global variable to hold the SFMC access token
 sfmc_access_token = None
@@ -150,7 +150,9 @@ def authenticate_with_sfmc():
         "client_secret": sfmc_client_secret,
         "account_id": sfmc_account_id
     }
-    response = requests.post(sfmc_auth_endpoint, json=auth_payload)
+    #Sam Added this for testing to skip the SSL verification ERROR   
+    #response = requests.post(sfmc_auth_endpoint, json=auth_payload)
+    response =  requests.post(sfmc_auth_endpoint, json=auth_payload, verify=False)
     response_data = response.json()
     if response.status_code == 200:
         sfmc_access_token = response_data['access_token']
@@ -272,12 +274,12 @@ with tempfile.NamedTemporaryFile(delete=False) as temp_cafile, \
                 writer.writerow(event)
         return csv_file_path
 
-    def upload_to_s3(file_path, journey_id):
-        try:
-            s3_client.upload_file(file_path, s3_bucket_name, f'{journey_id}.csv')
-            logging.info(f"Bulk events for JourneyID {journey_id} uploaded to S3 successfully")
-        except Exception as e:
-            logging.error(f"Error uploading file to S3: {e}")
+    ##def upload_to_s3(file_path, journey_id):
+    ##    try:
+    ##        s3_client.upload_file(file_path, s3_bucket_name, f'{journey_id}.csv')
+    ##        logging.info(f"Bulk events for JourneyID {journey_id} uploaded to S3 successfully")
+    ##    except Exception as e:
+    ##        logging.error(f"Error uploading file to S3: {e}")
 
     consume_thread = threading.Thread(target=consume_messages)
     consume_thread.daemon = True
