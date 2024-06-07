@@ -35,6 +35,7 @@ vault_role_id = os.getenv('VAULT_ROLE_ID')
 vault_secret_id = os.getenv('VAULT_SECRET_ID')
 vault_mount_point = 'kv'
 vault_secret_path = 'ph-commercial-architecture/non-prod/edh'
+vault_secret_path_sfmc = 'ph-commercial-architecture/non-prod/sfmc'
 
 if not vault_role_id or not vault_secret_id:
     raise ValueError("VAULT_ROLE_ID and VAULT_SECRET_ID environment variables must be set")
@@ -84,6 +85,25 @@ def get_vault_secrets(client, vault_mount_point, vault_secret_path):
 # Get the Vault secrets
 secrets = get_vault_secrets(vault_client, vault_mount_point, vault_secret_path)
 
+# function to get HashiCorp Vault secrets for SFMC
+def get_vault_secrets_sfmc(client, vault_mount_point, vault_secret_path_sfmc):
+    try:
+        secrets = client.secrets.kv.v2.read_secret_version(
+            path=vault_secret_path_sfmc,
+            mount_point=vault_mount_point
+        )
+        return secrets['data']['data']
+    except hvac.exceptions.Forbidden as e:
+        raise Exception(f"Permission denied: {e}")
+    except hvac.exceptions.InvalidPath as e:
+        raise Exception(f"Invalid path: {e}")
+    except Exception as e:
+        raise Exception(f"Error retrieving secrets from Vault: {e}")
+    
+# Get the Vault secrets for SFMC
+secrets_sfmc = get_vault_secrets_sfmc(vault_client, vault_mount_point, vault_secret_path_sfmc)
+
+
 # Define Kafka broker host and port
 kafka_broker = secrets['kafka_broker_us']
 
@@ -91,11 +111,11 @@ kafka_broker = secrets['kafka_broker_us']
 #sfmc_auth_endpoint = os.getenv('SFMC_AUTH_ENDPOINT')
 #print (f"sfmc_auth_endpoint: {sfmc_auth_endpoint}")
 # Salesforce Marketing Cloud details
-sfmc_auth_endpoint = secrets['sfmc_auth_endpoint']
-sfmc_api_endpoint = secrets['sfmc_api_endpoint']
-sfmc_client_id = secrets['sfmc_client_id']
-sfmc_client_secret = secrets['sfmc_client_secret']
-sfmc_account_id = secrets['sfmc_account_id']
+sfmc_auth_endpoint = secrets_sfmc['sfmc_auth_endpoint']
+sfmc_api_endpoint = secrets_sfmc['sfmc_api_endpoint']
+sfmc_client_id = secrets_sfmc['sfmc_client_id']
+sfmc_client_secret = secrets_sfmc['sfmc_client_secret']
+sfmc_account_id = secrets_sfmc['sfmc_account_id']
 
 # AWS S3 details
 s3_bucket_name = secrets['s3_bucket_name']
