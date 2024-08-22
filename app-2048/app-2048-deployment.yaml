@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: app-2048
-          image: public.ecr.aws/i7m0t5d2/2048game:latest
+          image: public.ecr.aws/kishorj/docker-2048:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
